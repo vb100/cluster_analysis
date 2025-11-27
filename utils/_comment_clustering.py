@@ -15,9 +15,13 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 
 def clean(df, col):
-    data_df = pd.DataFrame({'text' : df[col].tolist()})
-    data_df = data_df.dropna()
-    data_df = data_df.reset_index()
+    if 'source' in df.columns:
+        data_df = df[[col, 'source']].rename(columns={col: 'text'})
+    else:
+        data_df = df[[col]].rename(columns={col: 'text'})
+
+    data_df = data_df.dropna(subset=['text'])
+    data_df = data_df.reset_index(drop=True)
     return data_df
 
 def get_embeddings(df, from_file=None):
@@ -115,7 +119,8 @@ def plot_clusters(df, scale_factor, centroids):
     cluster_plot(umap_embeddings_2d,
                  annotations = df['text'].tolist(),
                  cluster_assignment = df['cluster_assignment'],
-                 centroids=centriods_2d)
+                 centroids=centriods_2d,
+                 sources=df['source'] if 'source' in df.columns else None)
     return df
     
     
