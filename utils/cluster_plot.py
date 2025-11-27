@@ -49,12 +49,13 @@ class HoverHandler:
 
                     
 
-def cluster_plot(embeddings, 
-                  cluster_assignment = None, 
-                  annotations = None, 
-                  outliers_mask = None, 
+def cluster_plot(embeddings,
+                  cluster_assignment = None,
+                  annotations = None,
+                  outliers_mask = None,
                   centroids = None,
-                  cmap='viridis'):
+                  cmap='viridis',
+                  sources=None):
     FS = (10, 8)
     fig, ax = plt.subplots(figsize=FS)
     N = embeddings.shape[0]
@@ -73,22 +74,31 @@ def cluster_plot(embeddings,
     embs_tru = embeddings[outliers_mask == False]
     cluster_assignment_tru = cluster_assignment[outliers_mask == False]
     
-    sc_all = ax.scatter(embeddings[:, 0], embeddings[:, 1], c=cluster_assignment, cmap=cmap, alpha=0)
-    sc_tru = ax.scatter(embs_tru[:, 0], embs_tru[:, 1], c=cluster_assignment_tru, cmap=cmap, alpha=1)
-    sc_out = ax.scatter(embs_out[:, 0], embs_out[:, 1], c=cluster_assignment_out, cmap=cmap, alpha=0.2, marker='x')
-    
+    if sources is not None:
+        color_map = {'TikTok': '#808080', 'YouTube': '#000000'}
+        colors = np.array([color_map.get(src, '#808080') for src in sources])
+    else:
+        colors = np.array(['#808080'] * N)
+
+    sc_all = ax.scatter(embeddings[:, 0], embeddings[:, 1], c=colors, alpha=0)
+    sc_tru = ax.scatter(embs_tru[:, 0], embs_tru[:, 1], c=colors[outliers_mask == False], alpha=1)
+    sc_out = ax.scatter(embs_out[:, 0], embs_out[:, 1], c=colors[outliers_mask == True], alpha=0.2, marker='x')
+
     if centroids is not None:
         sc_ctr = ax.scatter(centroids[:, 0], centroids[:, 1], marker='X', color='r')
-    
 
 
-    for sc in [sc_tru, sc_out]:
-        sc.set_clim(0, num_clusters - 1) # setting the same color range for colormap
 
     ## Plotting legend
-    legend1 = ax.legend(*sc_tru.legend_elements(), loc="lower left", title="Clusters", fontsize = 8)
-    ax.add_artist(legend1)
-    
+    if sources is not None:
+        from matplotlib.lines import Line2D
+
+        legend_elements = [
+            Line2D([0], [0], marker='o', color='w', label='TikTok', markerfacecolor='#808080', markersize=6),
+            Line2D([0], [0], marker='o', color='w', label='YouTube', markerfacecolor='#000000', markersize=6),
+        ]
+        ax.legend(handles=legend_elements, loc="lower left", title="Source", fontsize=8)
+
     if annotations is not None:
         annot = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
                     bbox=dict(boxstyle="round", fc="w"),
